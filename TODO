@@ -1,0 +1,5 @@
+"full" translation during playback would involve keeping a copy of the
+framebuffer and feeding the client exactly what it asks for, instead
+of mindlessly copying packets.  I actually don't think it'd be that
+hard, since we could just rip the code out of the VNC X server that
+transmits a framebuffer.

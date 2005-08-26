@@ -1,0 +1,233 @@
+2005-04-19  Brent Baccala <baccala@freesoft.org>
+
+	* configure.in: Version 1.0-pre1
+	* rfbproxy.c: Many changes.  Developed FBS 1.1 file format.
+	Added shared-session record and PPM export.  Added functions
+	to read multi-byte sequences from FBS files.
+	* rfbproxy.1: Consolidated old README file and most of what
+	I know of rfbproxy's options and problems into the man page.
+	* Makefile.am: Added regression tests for export.  Removed
+	BUGS file (its one bug was fixed by FBS 1.1)
+
+2003-08-11  Tim Waugh  <twaugh@redhat.com>
+
+	* configure.in: Version 0.6.6 (stable).
+
+2003-08-11  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c: Handle protocol 3.7.
+
+2002-05-01  Richard Lavigne  <engival@arnet.cx>
+
+	* rfbproxy.c: Added --date option to append the current date to the
+	output filename.
+
+2002-03-01  Tim Waugh  <twaugh@redhat.com>
+
+	* configure.in: Version 0.6.5 (stable).
+
+2002-03-01  Douglas Larrick  <doug@ties.org>
+
+	* rfbproxy.c (process_client_message): Don't reset last_tv too
+	frequently.
+
+2002-01-09  Tim Waugh  <twaugh@redhat.com>
+
+	* configure.in: Version 0.6.4 (stable).
+
+2002-01-09  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile.am: Ship the spec file in the tarball.
+
+2002-01-09  Michael Ossmann  <michael.ossmann@alttech.com>
+
+	* rfbproxy.c (process_client_message): Fix a typo.
+
+2001-10-10  Tim Waugh  <twaugh@redhat.com>
+
+	* configure.in: Version 0.6.3 (stable).
+
+2001-10-10  Mark Purtill  <purtill@alum.mit.edu>
+
+	* rfbproxy.c (playback): Parse the initial messages from the
+	client.
+
+2001-05-11  Tim Waugh  <twaugh@redhat.com>
+
+	* configure.in: Version 0.6.2 (stable).
+
+2001-05-11  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (main): Need to htonl INADDR_LOOPBACK first.
+
+2001-05-05  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (INADDR_LOOPBACK): Define if not already defined.
+	(main): Use it for connecting to localhost.
+
+2001-05-05  Tim Waugh  <twaugh@redhat.com>
+ 
+	* rfbproxy.c (VERSION): Moved to config.h.  Version 0.6.2pre1.
+	Hopefully uint32_t will get defined on more platforms now.
+	* rfbproxy.spec: Renamed rfbproxy.spec.in.
+	* Makefile: Renamed Makefile.in.
+	* Makefile.am: New file.
+	* configure.in: New file.
+	* autogen.sh: New file.
+	Autoconfication by Marko Kreen.
+
+2001-02-28  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (VERSION): Version 0.6.1 (stable).
+
+2001-02-28  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbplaymacro (main): Fix misusage of gethostbyname.  Fix
+	option handling bug.
+
+2000-08-08  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (VERSION): Version 0.6.0 (stable).
+
+2000-08-03  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.1: New file.
+
+	* rfbproxy.c (DEFAULT_CYCLE): Remove.
+
+2000-07-28  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (main): --playback and --record no longer require an
+	argument (since the multiple file change).
+
+2000-07-25  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (VERSION): Version 0.5.1 (devel).
+
+2000-07-25  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (do_read): s/write/read/.
+	(handle_keys_during_playback): New function.  Code mostly copied
+	from record: someone should merge those somehow.
+	(playback): New parameters cycle and pause.  Handle cycling and
+	pausing.  Cycling currently uses a nasty heuristic to decide when
+	it's safe to stop.  It would be nicer if it could be made to
+	understand what it's sending, but maybe that would be too
+	complicated.  The same goes for authentication.  Cycling will most
+	likely only work with FBS files recorded from rfbproxy.
+	(main): Handle --pause and --cycle.
+
+2000-07-21  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (main): --loop doesn't take an argument.
+	(usage): Remove duplicate 'file' in usage text.
+	(main): Allow lists of files for playback.  Add stubs for --pause
+	and --cycle.
+	(DEFAULT_CYCLE): Define.
+	(playback): Return -1 for failure, >0 for success (and loop is
+	okay). (0 implies looping is not okay.)  Loop parameter now means
+	'need to call rewind_file first'.
+	(usage): Update.
+	(VERSION): Version 0.5.0 (devel).
+
+2000-07-06  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (VERSION): Version 0.4.0 (stable).
+
+2000-06-21  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (playback): If mmap fails, report why.
+	(VERSION): Version 0.3.2 (devel).
+
+2000-06-20  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (record): Open file for writing in binary mode (for
+	systems where that makes any sense).
+
+2000-06-16  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (usage): Say what the default display is.
+	(VERSION): Version 0.3.1 (devel).
+
+2000-06-14  Tim Waugh  <twaugh@redhat.com>
+
+	* TODO: Cross off 'macro recording'. :-)
+
+	* rfbproxy.c (process_client_message): Now we actually process the
+	client's messages, if --type==events.  Output is in RFM format.
+	* rfbproxy.c: Update comments.
+
+2000-06-13  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (VERSION): Version 0.3.0 (devel).
+	(do_authentication): New function.
+	(record): Use it.
+
+2000-06-13  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (VERSION): Version 0.2.0 (stable).
+
+	* Makefile (rfbproxy.tar.gz): Error when local files are
+	modified.
+
+2000-06-12  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (record): FBS file format correction: version number
+	at beginning.
+	(playback): Likewise.
+	(record): Check for errors when closing the output file.
+	(VERSION): Version 0.12.  Hopefully the output file format is
+	stable this time!
+
+2000-06-09  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (record): Use fbs file format.
+	(playback): Use fbs file format.
+	(VERSION): Version 0.11.
+
+2000-06-09  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (read_traffic): Fix buffering problems.
+	(VERSION): Version 0.10.
+
+2000-06-08  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (playback): Use select portably.
+	(rewind_file): Handle bad input.
+
+2000-06-06  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (playback): Fix thinkos: open returns -1 on failure,
+	and mmap returns MAP_FAILED.
+
+2000-06-03  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (usage): Make static.
+	(BUFSIZE): Make larger.
+	(main): Rewritten entirely: use getopt, look nicer.  Add
+	stdin/stdout functionality.  Move socket stuff here.
+	(playback): Remove socket stuff.  Loop over write.  Make static.
+	(record): Remove socket stuff.  Loop over write.  Make static.
+	(accept_connection): New function.
+	(playback): Delay threshold of 5ms: delays shorter than that are
+	ignored.  This gives a substantial improvement in speed.
+	(record): Use newer file format.
+	(playback): Likewise.
+	(playback): Better error checking.
+	(do_write): New function.
+	(read_traffic): New function (for --loop).
+	(rewind_file): New function (for --loop).
+	(playback): Looping.
+
+2000-05-31  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (playback): Use a much larger buffer size here too.
+	(record): Use FD_SETSIZE as select's nfds.
+	(playback): Likewise.
+	(playback): Handle client closing connection.
+
+2000-05-30  Tim Waugh  <twaugh@redhat.com>
+
+	* rfbproxy.c (record): Use a much larger buffer size.  Suggested
+	by Roberto Diaz <rdiazmar@dit.upm.es>.
+

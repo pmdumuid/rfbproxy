@@ -1,0 +1,86 @@
+This is a record/replay proxy for RFB (used by VNC).  It can be used
+to record changes to the frame buffer into a file, for later
+playback, or for convertion to an MPEG.
+
+See man page and comments in rfbproxy.c for more info.
+
+
+RECORDING
+
+To record a session in proxy mode (and create an FBS 1.0 file):
+
+- start a vnc server as normal, on localhost:1
+- run 'rfbproxy --record rfb.log'.  This will create a VNC proxy
+  server on localhost:10
+- run vncviewer -encodings hextile [options] localhost:10
+- do stuff
+- quit vncviewer.  rfbproxy should also quit.
+
+To record in shared-session mode (and create an FBS 1.1 file):
+
+- start a vnc server as normal, on localhost:1
+- run 'vncviewer localhost:1'
+- run 'rfbproxy --record --shared rfb.log'
+- do stuff
+- kill rfbproxy (either 'kill PID' or CNTL-C should work)
+
+
+PLAYBACK
+
+To play back a session, there are two possibilities:
+
+1. Use rfbproxy again.
+
+- rfbproxy --play rfb.log
+- vncviewer localhost:10
+
+2. Use xrfbviewer, available from www.hexonet.de.
+
+
+RECORDING TO VIDEO
+
+You probably need to record in shared-session mode for --export to work.
+
+To convert a recorded session to MPEG, you need three programs from
+the mjpegtools packets.  Then do something like (for DVD format):
+
+rfbproxy --export rfb.log \
+	| ppmtoy4m \
+	| yuvscaler -n ntsc -O DVD \
+	| mpeg2enc -f 8 -o video.mpg
+
+It is possible to record audio simultaneously.  I use the 'vrec'
+program from sndkit to record raw audio, then use 'lame' to convert
+this to mpeg audio, then 'mplex' (also from mjpegtools) to multiplex
+this with the video into an MPEG program stream.  The only part at all
+tricky is getting the video and audio synchronized.  I use a shell
+script (see man page) to start and stop rfbproxy and 'vrec'
+simultaneously.
+
+Then lame is used like this:
+
+	lame -m m -x -r -s 48 -h audio audio.mp3
+
+And mplex like this:
+
+	mplex -f 8 -o program.mpg audio.mp3 video.mpg
+
+Now you've got a DVD-compatible MPEG program stream with both video
+and audio in it.
+
+
+Have fun.
+
+NOTES
+
+  If you intend to use the --loop or --cycle options when playing back,
+  you CANNOT use the ZRLE encoding when recording.  This is because the
+  zlib state cannot be maintained.
+
+  DO NOT suspend (CNTL-Z) rfbproxy (or the record script) when recording
+  in shared session mode, as this can freeze all sessions attached to
+  the VNC server.
+
+
+Tim.
+*/

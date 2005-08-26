@@ -1,0 +1,257 @@
+.\"		-*-Nroff-*-
+.\" Copyright 2000 Red Hat, Inc.
+.TH RFBPROXY 1 "2 Aug 2000" "VNC EXTRAS" "User's Manual"
+.SH NAME
+rfbproxy \- record, play back, or export a VNC session
+.SH SYNOPSIS
+.B rfbproxy
+[\fIOPTION\fR]... \fIACTION\fR \fIfiles\fR
+.fi
+.SH DESCRIPTION
+.B rfbproxy
+is a simple proxy for VNC, which allows recording of screen
+updates, key presses and mouse events, for later replay to
+a VNC client or export as a series of PPM frames.
+It can also record screen updates by connecting to a VNC
+session shared by other client(s).
+Exporting as PPM is the first step
+towards converting a session to an MPEG or Theora video
+using
+.BR mjpegtools (1)
+or
+.BR ffmpeg2theora .
+.SH OPTIONS
+\fIACTION\fR is exactly one of:
+.TP
+\fB\-r\fR, \fB\--record\fR
+record RFB communications and store them in the file (only one file is
+allowed for \fIfiles\fR)
+.TP
+\fB\-p\fR, \fB\--playback\fR
+play back the RFB communications that were captured to the \fIfiles\fR
+.TP
+\fB\-x\fR, \fB\--export\fR
+export as a series of PPM frames written to standard output
+the RFB communications
+that were captured to the \fIfiles\fR
+.PP
+\fIOPTIONS\fR can be:
+.TP
+\fB\-c\fR, \fB\--stdout\fR
+use stdin and stdout for communications with the client.  Useful in
+conjunction with inetd
+.TP
+\fB\-l\fR, \fB\--loop\fR
+(playback only) when file is finished, replay from first
+FrameBufferUpdate
+.TP
+\fB\-d\fR, \fB\--date\fR
+(record only) append date to end of filename
+.TP
+\fB\-s\fR, \fB\--shared\fR
+(record only) attach to a shared session
+.TP
+\fB\-v\fR
+increase verbosity
+.TP
+\fB\--pause=\fR\fIkey\fR
+(playback only) when
+.I key
+is pressed,
+playback will be paused until it is pressed again.
+.I key
+can be either a single lowercase ASCII character
+or an X Windows keysym in hex (no preceding '0x').
+Note that keys between 'a' and 'f' will be interpreted
+as hexadecimal numbers, and must be specified as '61'
+through '66'.  Backspace is 'ff08'; Return is 'ff0d';
+Escape is 'ff1b'; Delete is 'ffff'. (no default)
+.TP
+\fB\--cycle=\fR\fIkey\fR
+(playback only) when multiple files are specified pressing 
+.I key
+will cycle between them.  Specified in same way as
+.BR --pause .
+(no default)
+.TP
+\fB\--type\fR=\fIWHAT\fR
+(proxy record only) capture either screen updates (`screen') or
+keyboard/mouse events (`events').  If 'events' are requested,
+an RFM (remote framebuffer macro) file is recorded that can
+be played back with
+.BR rfbplaymacro .
+(default
+.BR screen )
+.TP
+\fB\--framerate\fR=[\fBntsc\fR|\fBpal\fR|\fBfile\fR|\fIm/n\fR]
+(export only) specify framerate by name or numeric ratio
+.RI ( m/n
+frames per second) (default
+.BR ntsc )
+.TP
+\fB:n
+Occupy VNC display localhost:\fIn\fR (not valid with \fI\-c\fR
+option; default
+.BR :10 ).
+.TP
+\fB\--server\fR=[\fIserver\fR]:\fIdisplay\fR
+(record only) use specified VNC server (default
+.BR localhost:0 )
+.SH EXAMPLES
+.TP
+.I rfbproxy -r log.fbs
+Wait for a VNC client to connect to
+.BR localhost:10 ,
+then connect to
+.B localhost:0
+and relay all VNC traffic between them,
+recording the screen updates in FBS 1.0 format to
+.I log.fbs
+and exiting when the client disconnects.  See
+.B BUGS AND CAVEATS
+below for limitations of FBS 1.0.
+
+.TP
+.I rfbproxy -rs log.fbs
+Connect to
+.B localhost:0
+as a shared session and record the screen updates in FBS 1.1 format to
+.I log.fbs
+until killed (CNTL-C or
+.BR kill ).
+
+.TP
+.I rfbproxy -p log.fbs
+Wait for a VNC client to connect to
+.BR localhost:10 ,
+then playback the VNC session recorded in
+.IR log.fbs .
+
+.TP
+.I rfbproxy -pl --cycle=ff0d log.fbs
+Looping playback that resets if the Return key hit.  Useful for playing
+back sessions whose colors don't show right because of client-initiated
+changes in pixel format; hitting Return right away to reset the
+playback often helps.  See
+.B BUGS AND CAVEATS
+below for a better solution.
+
+.TP
+.I rfbproxy -x log.fbs | ppmtoy4m | mpeg2enc -o video.mpg
+Convert the VNC session in
+.I log.fbs
+to MPEG using
+.BR mjpegtools (1).
+
+.PP
+Here's simple shell script that simultaneously records VNC and audio
+at DVD's 48 kHz sample rate
+.RB ( vrec
+is from
+.BR sndtools ):
+
+.RS 4
+#!/bin/sh
+.P
+function terminate() {
+.br
+	kill $background_pid
+.br
+}
+.br
+trap terminate SIGTERM SIGINT SIGKILL
+.P
+rfbproxy -rs fbs &
+.br
+background_pid=$!
+.P
+vrec -s 48000 -b 16 -r audio
+.RE
+
+And this one converts the recorded fbs/audio pair into a DVD-format MPEG
+using
+.BR mjpegtools (1)
+and
+.BR lame (1).
+
+.RS 4
+#!/bin/sh
+.P
+rfbproxy -x fbs | ppmtoy4m | \\
+.br
+    yuvscaler -n ntsc -O DVD | mpeg2enc -f 8 -o video.mpg
+.br
+lame -m m -x -r -s 48 -h audio audio.mp3
+.br
+mplex -f 8 -o both.mpg audio.mp3 video.mpg
+.RE
+
+
+.SH SECURITY
+To avoid recording passwords (even encrypted),
+.B rfbproxy
+discards authentication information when recording a session,
+and instead changes the recorded authenticated scheme to look
+like the session used no authentication.
+.PP
+.B rfbproxy
+does not authenticate incomming connections in playback mode.
+.PP
+Recording keystrokes with
+.B --type=events
+can record passwords.
+
+.SH BUGS AND CAVEATS
+A proxy record will create a version 1.0 FBS file whose pixel formats
+can't be reliably interpreted, and will probably only work for playback
+to the same (or a very similar) client that recorded it, and not for export.
+Shard-session records create version 1.1 FBS files that don't have
+this problem.
+
+.PP
+Playback makes no attempt to handle client FramebufferUpdateRequests;
+it justs transmits a series of FramebufferUpdates exactly as they
+were recorded.  This defect is most noticeable with clients that
+pan across a session larger than their window size; the exposed
+areas will probably remain undrawn by
+.BR rfbproxy .
+Clients that switch pixel formats (i.e,
+.BR xvncviewer )
+can also be affected by this; parts of the screen can
+remain drawn in a low-resolution format after the client
+has switched to a high-resolution format.
+Fix this by stopping the client from changing pixel formats.  For
+.B xvncviewer
+try
+.B -autoselect=0 -fullcolor
+(version 4.1.1) or
+.B -noauto -depth 24
+(version 3.3.7).
+
+.PP
+If you intend to use the --loop or --cycle options when playing back
+an FBS 1.0 file, you
+.I cannot
+use the ZRLE encoding when recording.  This is because the
+zlib state cannot be maintained.  FBS 1.1 files do not use ZRLE at all.
+.PP
+Suspending
+.B rfbproxy
+(or any script using it) when recording
+in shared session mode can freeze all sessions attached to
+the VNC server.
+.PP
+Neither export nor FBS 1.1 playback work on colormap sessions
+(only true color is supported).
+.PP
+Pixel formats larger than 32 bits are not supported.
+.SH AUTHORS
+Tim Waugh <twaugh@redhat.com>
+.br
+Brent Baccala <baccala@freesoft.org>
+.SH SEE ALSO
+.BR vncviewer (1),
+.BR vncserver (1),
+.BR Xvnc (1),
+.BR ppm (5),
+.BR mjpegtools (1).
