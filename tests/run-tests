@@ -1,0 +1,59 @@
+#!/bin/sh
+RFBPROXY=$(cd ${top_builddir}; pwd)/rfbproxy; export RFBPROXY
+FAILED=0; export FAILED
+cd ${top_srcdir}/tests
+
+#
+#             REGRESSION TESTS
+#
+# tests 1, 2, 3
+#   export a recorded session (rgb888 CoRRE) at different framerates
+#
+echo -n "test 1... "; \
+if [ `$RFBPROXY -x --framerate 1 xclock.fbs | md5sum | cut -c1-32`\
+     = 203ad5c8cfc365d03b25c5699e3866aa ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+echo -n "test 2... "; \
+if [ `$RFBPROXY -x --framerate 2 xclock.fbs | md5sum | cut -c1-32`\
+     = feb7a90f227ada6dc59c18eb228f77e9 ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+echo -n "test 3... "; \
+if [ `$RFBPROXY -x xclock.fbs | md5sum | cut -c1-32`\
+     = cb35b3f28b8f1d7465a02cc41cb14ac0 ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+#
+# test 4
+#   same as test 3, but at an absurdly large framerate ratio
+#
+echo -n "test 4... "; \
+if [ `$RFBPROXY -x --framerate 3000000:100100 xclock.fbs | md5sum | cut -c1-32`\
+     = cb35b3f28b8f1d7465a02cc41cb14ac0 ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+#
+# test 5
+#   export a session with a 16-bit pixel format (rgb565 hextile)
+#
+echo -n "test 5... "; \
+if [ `$RFBPROXY -x xclock2.fbs | md5sum | cut -c1-32`\
+     = 485315d52148726aabaf0806f4acbfd0 ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+#
+# tests 6, 7
+#   export a recorded Windows session (rgb888 hextile)
+#
+echo -n "test 6... "; \
+if [ `$RFBPROXY -x --framerate 1 windows.fbs | md5sum | cut -c1-32`\
+     = fbe828538ceda491cc26230cb5204b96 ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+echo -n "test 7... "; \
+if [ `$RFBPROXY -x windows.fbs | md5sum | cut -c1-32`\
+     = 4f66176c036200b4345a85c3ba98062b ]; then echo passed; \
+else echo FAILED; FAILED=1; export FAILED; \
+fi
+if [ "$$FAILED" == "1" ]; then exit 1; fi
