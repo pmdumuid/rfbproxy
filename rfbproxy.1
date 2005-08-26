@@ -1,6 +1,6 @@
 .\"		-*-Nroff-*-
 .\" Copyright 2000 Red Hat, Inc.
-.TH RFBPROXY 1 "2 Aug 2000" "VNC EXTRAS" "User's Manual"
+.TH RFBPROXY 1 "19 Aug 2005" "VNC EXTRAS" "User's Manual"
 .SH NAME
 rfbproxy \- record, play back, or export a VNC session
 .SH SYNOPSIS
@@ -14,11 +14,11 @@ updates, key presses and mouse events, for later replay to
 a VNC client or export as a series of PPM frames.
 It can also record screen updates by connecting to a VNC
 session shared by other client(s).
-Exporting as PPM is the first step
-towards converting a session to an MPEG or Theora video
-using
-.BR mjpegtools (1)
-or
+Exporting as a series of PPMs is the first step
+towards converting a session to video using tools such as
+.BR mjpegtools (1),
+.BR ffmpeg (1),
+and/or
 .BR ffmpeg2theora .
 .SH OPTIONS
 \fIACTION\fR is exactly one of:
@@ -140,8 +140,18 @@ below for a better solution.
 .I rfbproxy -x log.fbs | ppmtoy4m | mpeg2enc -o video.mpg
 Convert the VNC session in
 .I log.fbs
-to MPEG using
+to MPEG-2 using
 .BR mjpegtools (1).
+
+.TP
+.I rfbproxy -x log.fbs | ppmtoy4m | ffmpeg -f yuv4mpegpipe -i - -vcodec mpeg4 video.avi
+Convert the VNC session in
+.I log.fbs
+to MPEG-4 using
+.BR ffmpeg (1)
+.RB ( ppmtoy4m (1)
+is from
+.BR mjpegtools (1)).
 
 .PP
 Here's simple shell script that simultaneously records VNC and audio
@@ -168,8 +178,8 @@ background_pid=$!
 vrec -s 48000 -b 16 -r audio
 .RE
 
-And this one converts the recorded fbs/audio pair into a DVD-format MPEG
-using
+This one converts the recorded fbs/audio pair into a DVD-standard MPEG-2
+with MP3 audio using
 .BR mjpegtools (1)
 and
 .BR lame (1).
@@ -179,11 +189,35 @@ and
 .P
 rfbproxy -x fbs | ppmtoy4m | \\
 .br
-    yuvscaler -n ntsc -O DVD | mpeg2enc -f 8 -o video.mpg
+    yuvscaler -n ntsc -O DVD | mpeg2enc -f 8 -o video.mpv
 .br
 lame -m m -x -r -s 48 -h audio audio.mp3
 .br
-mplex -f 8 -o both.mpg audio.mp3 video.mpg
+mplex -f 8 -o video.mpg audio.mp3 video.mpv
+.RE
+
+And this one converts the recorded fbs/audio pair into an DivX5-compatible
+MPEG-4 with MP2 audio using
+.BR ffmpeg (1)
+and
+.BR toolame (1).
+
+.RS 4
+#!/bin/sh
+.P
+toolame -m mono -s 48 audio audio.mp2
+.br
+rfbproxy -x fbs | ppmtoy4m | \\
+.br
+    ffmpeg -f yuv4mpegpipe -i - -i audio.mp2 \\
+.br
+        -vcodec mpeg4 -b 800 -g 300 -bf 2 -acodec copy video.avi
+.RE
+
+Both MPEG-2 and MPEG-4 files can be converted to Ogg/Vorbis:
+
+.RS 4
+ffmpeg2theora -o video.ogg video.avi
 .RE
 
 
@@ -254,4 +288,5 @@ Brent Baccala <baccala@freesoft.org>
 .BR vncserver (1),
 .BR Xvnc (1),
 .BR ppm (5),
-.BR mjpegtools (1).
+.BR mjpegtools (1),
+.BR ffmpeg (1).
