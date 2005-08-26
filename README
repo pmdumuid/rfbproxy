@@ -1,20 +1,64 @@
+rfbproxy
+
 This is a record/replay proxy for RFB (used by VNC).  It can be used
-to record changes to the frame buffer into a file, for later
-playback, or for convertion to an MPEG.
+as a proxy between a VNC viewer and a VNC server to permit recording
+into a file, or it can be used as a pseudo-VNC server to play back
+a recorded session.  It can also be used to convert a recorded VNC
+session into various video formats.
 
-See man page and comments in rfbproxy.c for more info.
+See the man page and comments in rfbproxy.c for more information.
 
+In recording, the rfbproxy acts this way:
 
-RECORDING
+VNC server <---> rfbproxy <---> VNC viewer
+                    |
+		    v
+		/some/file.rfb
 
-To record a session in proxy mode (and create an FBS 1.0 file):
+During playback, the concept is much simpler:
 
-- start a vnc server as normal, on localhost:1
-- run 'rfbproxy --record rfb.log'.  This will create a VNC proxy
-  server on localhost:10
-- run vncviewer -encodings hextile [options] localhost:10
-- do stuff
-- quit vncviewer.  rfbproxy should also quit.
+rfbproxy <---> VNC viewer
+
+rfbproxy then reads a file to present it to the VNC viewer.
+
+To record a session (from the command line):
+
+1. Start a VNC server on the same host as the rfbproxy will be running on.
+2. Run rfbproxy in record mode (--record).  This will create a VNC proxy
+   server running on display :10 (port 5910).
+3. Run a VNC viewer, connecting to the VNC proxy server now running as
+   display :10.
+4. Once the viewer has connected, your display is being recorded.
+5. When finished, quit the VNC viewer.  The VNC proxy server will then
+   quit also; the VNC server should be unaffected.
+
+To record a session (using xinetd):
+
+1. Configure /etc/xinetd.conf to use rfbproxy in record mode:
+
+service rfbproxy-record1
+{
+	port		= 5911
+	socket_type	= stream
+	protocol	= tcp
+	wait		= no
+	user		= nobody
+	server		= /usr/bin/rfbproxy
+	server_args     = --server=:1 --stdout --record /tmp/record:1.rfb
+}
+
+The port is the display number + 5900 (this example uses display :11).
+The --server option specifies which server is controlling the display which
+is being recorded.
+
+For convenience sake, use displays :11 (5911) through :19 (5909) for
+servers on displays :1 (5901) through :9 (5909).  Makes it easy to remember,
+and still leaves display :10 (5910) open for playback.
+
+2. Use a VNC viewer, connecting to the display specified; in this case,
+   display :11.
+
+3. When done, quit the viewer.
 
 To record in shared-session mode (and create an FBS 1.1 file):
 
@@ -27,14 +71,32 @@ To record in shared-session mode (and create an FBS 1.1 file):
 
 PLAYBACK
 
-To play back a session, there are two possibilities:
+To play back a session, there are three possibilities:
 
-1. Use rfbproxy again.
+A) Use rfbproxy, this time in playback mode (--playback).  This does
+   not require X; only a VNC viewer somewhere on the network.
+   Use a command like:
 
-- rfbproxy --play rfb.log
-- vncviewer localhost:10
+   rfbproxy --playback /pub/bugzilla.rfb
 
-2. Use xrfbviewer, available from www.hexonet.de.
+B) Use rfbproxy (like A) but from xinetd:
+
+service rfbproxy
+{
+	port		= 5910
+	socket_type	= stream
+	protocol	= tcp
+	wait		= no
+	user		= nobody
+	server		= /usr/bin/rfbproxy
+	server_args     = --stdout --playback /pub/bugzilla.rfb
+}
+
+This example uses display :10 (that is, port 5910 - 5900).
+
+C) Use xrfbviewer, available from www.hexonet.de.  This requires X to run,
+   but also comes with x0rfbserver, a very nice package to allow remote
+   control of a local standard X11 server display.
 
 
 RECORDING TO VIDEO
@@ -80,7 +142,3 @@ NOTES
   DO NOT suspend (CNTL-Z) rfbproxy (or the record script) when recording
   in shared session mode, as this can freeze all sessions attached to
   the VNC server.
-
-
-Tim.
-*/

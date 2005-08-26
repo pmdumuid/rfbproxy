@@ -1,6 +1,13 @@
+2005-05-20  Tim Waugh  <twaugh@redhat.com>
+
+	* configure.in: Version 1.1.0.
+
+2005-05-20  Tim Waugh  <twaugh@redhat.com>
+
+	Various small changes to integrate last change.
+
 2005-04-19  Brent Baccala <baccala@freesoft.org>
 
-	* configure.in: Version 1.0-pre1
 	* rfbproxy.c: Many changes.  Developed FBS 1.1 file format.
 	Added shared-session record and PPM export.  Added functions
 	to read multi-byte sequences from FBS files.
