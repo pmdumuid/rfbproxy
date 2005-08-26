@@ -789,7 +789,7 @@ static int do_passthrough_authentication (int server, int clientr, int clientw,
 				return 1;
 			}
 			fprintf(stderr, "Connection failed: %.*s\n",
-				reason_length, packet);
+				(int) reason_length, packet);
 			return 1;
 		}
 		if (do_read (server, packet + 1, num_types)) {
@@ -905,6 +905,7 @@ static int do_standalone_authentication (int server, FILE *f,
 	size_t packet_size;
 	struct timeval start;
 	uint32_t auth;
+	uint32_t noauth = htonl (1);
 
 	start.tv_sec = 0;
 	start.tv_usec = 0;
@@ -931,7 +932,6 @@ static int do_standalone_authentication (int server, FILE *f,
 	if (do_read (server, packet, packet_size))
 		return 1;
 
-	uint32_t noauth = htonl (1);
 	memcpy (&auth, packet, 4);
 	auth = ntohl (auth);
 	/* we record a 'noauth' packet in the trace file
