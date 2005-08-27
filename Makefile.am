@@ -5,11 +5,7 @@ man_MANS = rfbproxy.1
 
 rfbproxy_SOURCES = rfbproxy.c
 
-EXTRA_DIST = $(man_MANS) autogen.sh rfbproxy.spec.in rfbproxy.spec \
-	tests/run-tests \
-	tests/xclock.fbs \
-	tests/xclock2.fbs \
-	tests/windows.fbs
+EXTRA_DIST = $(man_MANS) autogen.sh rfbproxy.spec.in rfbproxy.spec
 
 TESTS_ENVIRONMENT = top_srcdir=$(top_srcdir) top_builddir=$(top_builddir)
 TESTS = tests/run-tests
