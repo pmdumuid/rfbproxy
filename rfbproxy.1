@@ -137,14 +137,14 @@ playback often helps.  See
 below for a better solution.
 
 .TP
-.I rfbproxy -x log.fbs | ppmtoy4m | mpeg2enc -o video.mpg
+.I rfbproxy -x log.fbs | ppmtoy4m -S 420_jpeg | mpeg2enc -o video.mpg
 Convert the VNC session in
 .I log.fbs
 to MPEG-2 using
 .BR mjpegtools (1).
 
 .TP
-.I rfbproxy -x log.fbs | ppmtoy4m | ffmpeg -f yuv4mpegpipe -i - -vcodec mpeg4 video.avi
+.I rfbproxy -x log.fbs | ppmtoy4m -S 420_jpeg | ffmpeg -f yuv4mpegpipe -i - -vcodec mpeg4 video.avi
 Convert the VNC session in
 .I log.fbs
 to MPEG-4 using
@@ -179,42 +179,42 @@ vrec -s 48000 -b 16 -r audio
 .RE
 
 This one converts the recorded fbs/audio pair into a DVD-standard MPEG-2
-with MP3 audio using
+with MP2 audio using
 .BR mjpegtools (1)
-and
-.BR lame (1).
-
-.RS 4
-#!/bin/sh
-.P
-rfbproxy -x fbs | ppmtoy4m | \\
-.br
-    yuvscaler -n ntsc -O DVD | mpeg2enc -f 8 -o video.mpv
-.br
-lame -m m -x -r -s 48 -h audio audio.mp3
-.br
-mplex -f 8 -o video.mpg audio.mp3 video.mpv
-.RE
-
-And this one converts the recorded fbs/audio pair into an DivX5-compatible
-MPEG-4 with MP2 audio using
-.BR ffmpeg (1)
 and
 .BR toolame (1).
 
 .RS 4
 #!/bin/sh
 .P
+rfbproxy -x fbs | ppmtoy4m -S 420_jpeg | \\
+.br
+    yuvscaler -n ntsc -O DVD | mpeg2enc -f 8 -o video.mpv
+.br
 toolame -m mono -s 48 audio audio.mp2
 .br
-rfbproxy -x fbs | ppmtoy4m | \\
-.br
-    ffmpeg -f yuv4mpegpipe -i - -i audio.mp2 \\
-.br
-        -vcodec mpeg4 -b 800 -g 300 -bf 2 -acodec copy video.avi
+mplex -f 8 -o video.mpg audio.mp2 video.mpv
 .RE
 
-Both MPEG-2 and MPEG-4 files can be converted to Ogg/Vorbis:
+And this one converts the recorded fbs/audio pair into an DivX6-compatible
+MPEG-4 with MP3 audio using
+.BR ffmpeg (1)
+and
+.BR lame (1).
+
+.RS 4
+#!/bin/sh
+.P
+lame -m m -x -r -s 48 -h audio audio.mp3
+.br
+rfbproxy -x fbs | ppmtoy4m -S 420_jpeg | \\
+.br
+    ffmpeg -f yuv4mpegpipe -i - -i audio.mp3 \\
+.br
+        -vcodec mpeg4 -vtag DivX -b 800 -g 300 -bf 2 -acodec copy video.avi
+.RE
+
+Both MPEG-2 and MPEG-4 files can be converted to Ogg/Vorbis with ffmpeg2theora:
 
 .RS 4
 ffmpeg2theora -o video.ogg video.avi

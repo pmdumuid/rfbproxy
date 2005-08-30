@@ -154,11 +154,16 @@ C) Use xrfbviewer, available from www.hexonet.de.  This requires X to run,
 
 RECORDING TO VIDEO
 
-You probably need to record in shared-session mode for --export to work.
-See the comments at the beginning of rfbproxy.c to understand why.
+You probably need to record in shared-session mode for --export to
+work.  See the comments at the beginning of rfbproxy.c to understand
+why.  There are several different video codecs you can use, though I
+think mjpegtools and ffmpeg are the main ones, and many different ways
+to combine the various options.  Look at the man page and the Makefile
+for additional possibilities.
 
-To convert a recorded session to MPEG using the mjpegtools package, do
-something like (for DVD format):
+About the simplest video conversion is to convert a recorded session
+to MPEG using the mjpegtools package, doing something like (for DVD
+format):
 
 rfbproxy --export rfb.log \
 	| ppmtoy4m \
@@ -183,10 +188,6 @@ And mplex like this:
 
 Now you've got a DVD-compatible MPEG program stream with both video
 and audio in it.
-
-You can also convert to video using ffmpeg, which supports a broader
-range of video formats than mjpegtools.  See the Makefile for some
-targets showing possible invocation syntax.
 
 
 Have fun.
