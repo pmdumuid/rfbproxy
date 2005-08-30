@@ -1,11 +1,11 @@
 Summary: A record/playback proxy for VNC.
 Name: rfbproxy
-Version: 1.1.0
+Version: 1.1.1
 Release: 0.1
 License: GPL
 Group: Applications/System
-URL: http://people.redhat.com/twaugh/rfbproxy/
-Source0: ftp://people.redhat.com/twaugh/rfbproxy/stable/%{name}-%{version}.tar.bz2
+URL: http://rfbproxy.sourceforge.net/
+Source0: http://prdownloads.sourceforge.net/rfbproxy/%{name}-%{version}.tar.bz2?download
 Buildroot: %{_tmppath}/%{name}-%{version}-buildroot
 
 %description
@@ -38,6 +38,9 @@ rm -rf %{buildroot}
 %{_mandir}/*/*
 
 %changelog
+* Fri Aug 26 2005 Brent Baccala <baccala@freesoft.org>
+- changed links to point to rfbproxy.sourceforge.net
+
 * Fri May 20 2005 Tim Waugh <twaugh@redhat.com>
 - Ship TODO, not BUGS.
 - Use the bz2 source file.
