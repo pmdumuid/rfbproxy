@@ -119,6 +119,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <setjmp.h>
+#include <endian.h>
 
 #if HAVE_STDINT_H
 # include <stdint.h>
@@ -561,17 +562,29 @@ void get_pixel(FBSfile *file, struct FramebufferFormat *format,
 	int i;
 	uint32_t rawpixel=0, pixel;
 
-	get_bytes(file, buf, format->bytes_per_pixel);
+	/* Profiling shows this function as a bottleneck, so we go to
+	 * a little extra trouble here with the byte ordering.
+	 */
 
 	if (format->big_endian) {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		get_bytes(file, &rawpixel, format->bytes_per_pixel);
+#else
+		get_bytes(file, buf, format->bytes_per_pixel);
 		for (i = 0; i < format->bytes_per_pixel; i++) {
 			rawpixel <<= 8;
 			rawpixel |= buf[i];
 		}
+#endif
 	} else {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		get_bytes(file, &rawpixel, format->bytes_per_pixel);
+#else
+		get_bytes(file, buf, format->bytes_per_pixel);
 		for (i = 0; i < format->bytes_per_pixel; i++) {
 			rawpixel |= buf[i] << (8*i);
 		}
+#endif
 	}
 
 	pixel = rawpixel;
@@ -2225,15 +2238,25 @@ void copy_rect(struct pixel *framebuffer, struct FramebufferFormat *fbf,
 	}
 }
 
+/* Profiling showed fill_rect() as a bottleneck, so I only use
+ * set_pixel for the first line, then memcpy to copy the first line to
+ * the subsequent lines.
+ */
+
 static void fill_rect(struct pixel *framebuffer, struct FramebufferFormat *fbf,
 		      struct pixel *pixelptr,
 		      int rectx, int recty, int rectw, int recth)
 {
 	int x, y;
-	for (y = recty; y < recty+recth; y++) {
-		for (x = rectx; x < rectx+rectw; x++) {
-			set_pixel(framebuffer, fbf, x, y, pixelptr);
-		}
+
+	for (x = rectx; x < rectx+rectw; x++) {
+	  set_pixel(framebuffer, fbf, x, recty, pixelptr);
+	}
+
+	for (y = recty+1; y < recty+recth; y++) {
+	  memcpy(&framebuffer[y*fbf->width + rectx],
+		 &framebuffer[recty*fbf->width + rectx],
+		 rectw * sizeof(struct pixel));
 	}
 }
 
