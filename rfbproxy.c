@@ -899,7 +899,7 @@ static int do_passthrough_authentication (int server, int clientr, int clientw,
  */
 
 static int do_standalone_authentication (int server, FILE *f,
-					 struct FramebufferFormat * fbf)
+					 struct FramebufferFormat * fbf, char * vnc_password)
 {
 	char packet[24];
 	size_t packet_size;
@@ -950,7 +950,11 @@ static int do_standalone_authentication (int server, FILE *f,
 		if (do_read (server, challenge, sizeof(challenge)))
 			return 1;
 
-		passwd = getpass("Password: ");
+        if (vnc_password) {
+            passwd = vnc_password;
+        } else {
+            passwd = getpass("Password: ");
+        }
 
 		if ((!passwd) || (strlen(passwd) == 0)) {
 			fprintf(stderr,"Reading password failed\n");
@@ -1292,7 +1296,7 @@ void signal_handler(int signum)
 
 static int record (const char *file, int clientr, int clientw,
 		   struct sockaddr_in server_addr, int do_events_instead,
-		   int appenddate, int shared_session)
+		   int appenddate, int shared_session, char *vnc_password)
 {
 	const char *version0 = "FBS 001.000\n";
 	const char *version1 = "FBS 001.001\n";
@@ -1359,7 +1363,7 @@ static int record (const char *file, int clientr, int clientw,
 			exit (1);
 		}
 	} else {
-		if (do_standalone_authentication (server, f, &fbf)) {
+		if (do_standalone_authentication (server, f, &fbf, vnc_password)) {
 			fprintf (stderr, "Error during authentication\n");
 			exit (1);
 		}
@@ -2577,6 +2581,8 @@ static void usage (const char *name)
 		 "               First step in creating an MPEG.\n"
 		 " --version\n"
 		 "               Report program version (" VERSION ")\n",
+		 " --password=YourPassword\n"
+		 "               Set the password to use for authentication.\n",
 		 name);
 	exit (1);
 }
@@ -2619,6 +2625,7 @@ int main (int argc, char *argv[])
 	char type = '\0';
 	char *server = NULL;
 	char *display = NULL;
+    char *vnc_password = NULL;
 	int clientr, clientw;
 	struct sockaddr_in server_addr;
 	int orig_optind;
@@ -2643,6 +2650,7 @@ int main (int argc, char *argv[])
 			{"verbose", 0, 0, 'v'},
 			{"pause", 1, 0, 'P'},
 			{"cycle", 1, 0, 'C'},
+			{"password", 1, 0, 'W'},
 			{0, 0, 0, 0}
 		};
 		int l;
@@ -2693,6 +2701,11 @@ int main (int argc, char *argv[])
 			else if (!strncmp (optarg, "events", l))
 				type = 'e';
 			else usage (argv[0]);
+			break;
+        case 'W':
+			if (vnc_password)
+				usage (argv[0]);
+			vnc_password = optarg;
 			break;
 		case 'S':
 			if (server)
@@ -2844,7 +2857,7 @@ int main (int argc, char *argv[])
 
 	/* Do it */
 	if (action == 'r') {
-		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session);
+		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password);
 	} else {
 		int file_to_play = 0;
 		int looping = 0;
