@@ -1,3 +1,7 @@
+2012-09-24 Pierre Dumuid <pierre.dumuid@sustainabilityhouse.com.au>
+	* Add ability to specify VNC authentication password
+	* Remove dependany of vncauth by copying required libraries into bundle.
+
 2005-05-20  Tim Waugh  <twaugh@redhat.com>
 
 	* configure.in: Version 1.1.0.
