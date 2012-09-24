@@ -51,7 +51,7 @@ CONFIG_CLEAN_FILES = rfbproxy.spec
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_rfbproxy_OBJECTS = rfbproxy.$(OBJEXT)
+am_rfbproxy_OBJECTS = rfbproxy.$(OBJEXT) d3des.$(OBJEXT)
 rfbproxy_OBJECTS = $(am_rfbproxy_OBJECTS)
 rfbproxy_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -203,7 +203,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 man_MANS = rfbproxy.1
-rfbproxy_SOURCES = rfbproxy.c
+rfbproxy_SOURCES = rfbproxy.c d3des.c d3des.h
 EXTRA_DIST = $(man_MANS) autogen.sh rfbproxy.spec.in rfbproxy.spec
 TESTS_ENVIRONMENT = top_srcdir=$(top_srcdir) top_builddir=$(top_builddir)
 TESTS = tests/run-tests
@@ -310,6 +310,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/d3des.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rfbproxy.Po@am__quote@
 
 .c.o:

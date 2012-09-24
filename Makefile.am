@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = foreign
 bin_PROGRAMS = rfbproxy
 man_MANS = rfbproxy.1
 
-rfbproxy_SOURCES = rfbproxy.c
+rfbproxy_SOURCES = rfbproxy.c d3des.c d3des.h
 
 EXTRA_DIST = $(man_MANS) autogen.sh rfbproxy.spec.in rfbproxy.spec
 

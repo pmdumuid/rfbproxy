@@ -139,10 +139,33 @@ typedef unsigned long uint32_t;
 #include <sys/mman.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "d3des.h"
 
-#if HAVE_LIBVNCAUTH
-void vncEncryptBytes(char *, char *);
-#endif
+#define CHALLENGESIZE 16
+
+/* This function ripped from vnc source as is (vncauth.c) */
+void
+vncEncryptBytes(unsigned char *bytes, unsigned char *passwd)
+{
+    unsigned char key[8];
+    int i;
+
+    /* key is simply password padded with nulls */
+
+    for (i = 0; i < 8; i++) {
+        if (i < strlen(passwd)) {
+            key[i] = passwd[i];
+        } else {
+            key[i] = 0;
+        }
+    }
+
+    deskey(key, EN0);
+
+    for (i = 0; i < CHALLENGESIZE; i += 8) {
+        des(bytes+i, bytes+i);
+    }
+}
 
 #define VNC_BASE 5900
 #define DEFAULT_DISPLAY ":10"
@@ -941,7 +964,6 @@ static int do_standalone_authentication (int server, FILE *f,
 	write_packet (f, packet, 4, &start);
 
 	if (auth != 1) {
-#if HAVE_LIBVNCAUTH
 		char *passwd;
 		char challenge[16];
 		int i;
@@ -998,11 +1020,6 @@ static int do_standalone_authentication (int server, FILE *f,
 				(int)authResult);
 			return 1;
 		}
-#else
-		fprintf (stderr, "rfbproxy compiled without libvncauth: "
-			 "can't authenticate!\n");
-		return 1;
-#endif
 	}
 
 	/* ClientInitialisation - ask for a shared session */
