@@ -2588,6 +2588,18 @@ static void usage (const char *name)
 {
 	fprintf (stderr,
 		 "usage: %s [OPTIONS] ACTION files\n"
+		 "\nACTION is one of:\n"
+		 " -r, --record\n"
+		 "               Record RFB communications and store them in\n"
+		 "               the file.\n"
+		 " -p, --playback\n"
+		 "               Play back the RFB communications that were\n"
+		 "               captured to the file or files.\n"
+		 " -x, --export\n"
+		 "               Export recorded RFB communication as PPMs\n"
+		 "               First step in creating an MPEG.\n"
+		 " --version\n"
+		 "               Report program version (" VERSION ")\n"
 		 "where OPTIONS are:\n\n"
 		 " -c, --stdout  Use stdin and stdout for communications\n"
 		 "               with the client. Useful in conjunction\n"
@@ -2616,22 +2628,10 @@ static void usage (const char *name)
 		 " --server=[server]:display\n"
 		 "               (record only) Use specified VNC server. The\n"
 		 "               default is \"" DEFAULT_SERVER "\".\n"
-		 "\nACTION is one of:\n"
-		 " -r, --record\n"
-		 "               Record RFB communications and store them in\n"
-		 "               the file.\n"
-		 " -p, --playback\n"
-		 "               Play back the RFB communications that were\n"
-		 "               captured to the file or files.\n"
-		 " -x, --export\n"
-		 "               Export recorded RFB communication as PPMs\n"
-		 "               First step in creating an MPEG.\n"
-		 " --version\n"
-		 "               Report program version (" VERSION ")\n"
-		 " --password=YourPassword\n"
-		 "               Set the password to use for authentication.\n"
+		 " --password=yourPassword\n"
+		 "               (record only) Specify a password to use when connecting to a shared VNC server.\n"
 		 " --touch-at-recording-end=filename\n"
-		 "               Specify a file to touch once the recording has finished successfully.\n",
+		 "               (record only) Specify a file to touch once the recording has finished successfully.\n",
 		 name);
 	exit (1);
 }

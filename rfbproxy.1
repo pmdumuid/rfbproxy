@@ -97,6 +97,12 @@ option; default
 \fB\--server\fR=[\fIserver\fR]:\fIdisplay\fR
 (record only) use specified VNC server (default
 .BR localhost:0 )
+.TP
+\fB\--password\fR=\fIyourPassword\fR
+(record only) Specify a password to use when connecting to a shared VNC server.
+.TP
+\fB\--touch-at-recording-end\fR=\fIfilename\fR
+(record only) Specify a file to touch once the recording has finished successfully.
 .SH EXAMPLES
 .TP
 .I rfbproxy -r log.fbs
