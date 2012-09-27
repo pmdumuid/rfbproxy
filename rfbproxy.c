@@ -1326,7 +1326,8 @@ void signal_handler(int signum)
 
 static int record (const char *file, int clientr, int clientw,
 		   struct sockaddr_in server_addr, int do_events_instead,
-		   int appenddate, int shared_session, char *vnc_password)
+		   int appenddate, int shared_session, char *vnc_password,
+		   char *end_recording_touch)
 {
 	const char *version0 = "FBS 001.000\n";
 	const char *version1 = "FBS 001.001\n";
@@ -1614,6 +1615,12 @@ static int record (const char *file, int clientr, int clientw,
 	if (fclose (f))
 		perror ("Error writing file");
 
+	if (end_recording_touch) {
+        FILE * fre;
+		fre = fopen (end_recording_touch, "wb");
+		fprintf(fre, "RECORDING ENDED SUCCESSFULLY");
+		fclose(fre);
+	}
 	return 0;
 }
 
@@ -2620,9 +2627,11 @@ static void usage (const char *name)
 		 "               Export recorded RFB communication as PPMs\n"
 		 "               First step in creating an MPEG.\n"
 		 " --version\n"
-		 "               Report program version (" VERSION ")\n",
+		 "               Report program version (" VERSION ")\n"
 		 " --password=YourPassword\n"
-		 "               Set the password to use for authentication.\n",
+		 "               Set the password to use for authentication.\n"
+		 " --touch-at-recording-end=filename\n"
+		 "               Specify a file to touch once the recording has finished successfully.\n",
 		 name);
 	exit (1);
 }
@@ -2665,7 +2674,8 @@ int main (int argc, char *argv[])
 	char type = '\0';
 	char *server = NULL;
 	char *display = NULL;
-    char *vnc_password = NULL;
+	char *vnc_password = NULL;
+	char *end_recording_touch = NULL;
 	int clientr, clientw;
 	struct sockaddr_in server_addr;
 	int orig_optind;
@@ -2691,6 +2701,7 @@ int main (int argc, char *argv[])
 			{"pause", 1, 0, 'P'},
 			{"cycle", 1, 0, 'C'},
 			{"password", 1, 0, 'W'},
+			{"touch-at-recording-end", 1, 0, 'X'},
 			{0, 0, 0, 0}
 		};
 		int l;
@@ -2747,6 +2758,12 @@ int main (int argc, char *argv[])
 				usage (argv[0]);
 			vnc_password = optarg;
 			break;
+		case 'X':
+			if (end_recording_touch)
+				usage (argv[0]);
+			end_recording_touch = optarg;
+			break;
+
 		case 'S':
 			if (server)
 				usage (argv[0]);
@@ -2897,7 +2914,7 @@ int main (int argc, char *argv[])
 
 	/* Do it */
 	if (action == 'r') {
-		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password);
+		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password, end_recording_touch);
 	} else {
 		int file_to_play = 0;
 		int looping = 0;

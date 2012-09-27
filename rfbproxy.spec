@@ -1,6 +1,6 @@
 Summary: A record/playback proxy for VNC.
 Name: rfbproxy
-Version: 1.1.1
+Version: 1.1.1-pierre-02
 Release: 0.1
 License: GPL
 Group: Applications/System
