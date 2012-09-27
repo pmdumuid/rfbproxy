@@ -979,6 +979,7 @@ static int do_standalone_authentication (int server, FILE *f,
 	if (auth != 1) {
 		char *passwd;
 		char challenge[16];
+        char vnc_password_dupe[32];
 		int i;
 		uint32_t authResult;
 
@@ -986,7 +987,8 @@ static int do_standalone_authentication (int server, FILE *f,
 			return 1;
 
         if (vnc_password) {
-            passwd = vnc_password;
+            strcpy(vnc_password_dupe, vnc_password);
+            passwd = vnc_password_dupe;
         } else {
             passwd = getpass("Password: ");
         }
@@ -1313,7 +1315,8 @@ static int process_client_message (char *fixed, char *variable, FILE *f)
  * just set a flag.  A second CNTL-C will terminate the program.
  */
 
-int terminating=0;
+int terminating = 0;
+int control_exit = 0;
 
 void signal_handler(int signum)
 {
@@ -1327,7 +1330,7 @@ void signal_handler(int signum)
 static int record (const char *file, int clientr, int clientw,
 		   struct sockaddr_in server_addr, int do_events_instead,
 		   int appenddate, int shared_session, char *vnc_password,
-		   char *end_recording_touch)
+		   char *end_recording_touch, int control_sock)
 {
 	const char *version0 = "FBS 001.000\n";
 	const char *version1 = "FBS 001.001\n";
@@ -1348,6 +1351,7 @@ static int record (const char *file, int clientr, int clientw,
 		exit (1);
 	}
 
+    printf("Opening file, %s\n", file);
 	if (appenddate)
 	{ /* if we're appending the date, make the new filename in 'buf'.  if we're not, just call
 	     fopen directly on 'file' */
@@ -1467,6 +1471,9 @@ static int record (const char *file, int clientr, int clientw,
 		FD_SET (server, &rfds);
 		if (!shared_session) FD_SET (clientr, &rfds);
 
+        
+        if (control_sock != -1) FD_SET (control_sock, &rfds);
+
 		if (terminating == 1) {
 			shutdown(server, SHUT_WR);
 			terminating = 2;
@@ -1495,6 +1502,24 @@ static int record (const char *file, int clientr, int clientw,
 			if (shared_session && !terminating)
 				do_write(server, FramebufferUpdateRequest, 10);
 		}
+
+		if (control_sock != -1 && FD_ISSET(control_sock, &rfds)) {
+            int n;
+			static char tmp_control_buffer[200];
+            bzero(tmp_control_buffer, 200);
+
+			bufs = read (control_sock, tmp_control_buffer, 200);
+			if (!bufs) break;
+            printf("Here is the message: %s\n", tmp_control_buffer);
+            if (strncmp(tmp_control_buffer,"STATUS", 6) == 0) {
+                int n = write(control_sock,"RECORDING\n", 10);
+            } else if (strncmp(tmp_control_buffer,"STOP",4) == 0) {
+                terminating = 1;
+            } else if (strncmp(tmp_control_buffer,"TERMINATE",4) == 0) {
+                terminating = 1;
+                control_exit = 1;
+            }
+        }
 
 		if (!shared_session && FD_ISSET(clientr, &rfds)) {
 			/* We want to actually listen to the
@@ -1609,12 +1634,16 @@ static int record (const char *file, int clientr, int clientw,
 
  out:
 	free (buf);
+
 	if (server != -1)
 		close (server);
 
 	if (fclose (f))
 		perror ("Error writing file");
 
+    if (control_sock != -1) {
+        int n = write(control_sock,"SAVED\n", 6);
+    }
 	if (end_recording_touch) {
         FILE * fre;
 		fre = fopen (end_recording_touch, "wb");
@@ -2636,6 +2665,43 @@ static void usage (const char *name)
 	exit (1);
 }
 
+
+int start_control_connection (int portno)
+{
+    printf("Starting control connection on %d\n",portno);
+    int sockfd, newsockfd;
+    socklen_t clilen;
+    struct sockaddr_in serv_addr, cli_addr;
+    
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) 
+        perror("ERROR opening socket");
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
+    printf("C\n");
+    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        if (errno == EADDRINUSE) {
+			fprintf (stderr, "The port is already in use.\n");
+        } else {
+			fprintf (stderr, "An error occurred whilst trying to open the port.\n");
+        }
+        exit(1);
+    }
+    listen(sockfd,5);
+    clilen = sizeof(cli_addr);
+    newsockfd = accept(sockfd, 
+                       (struct sockaddr *) &cli_addr, 
+                       &clilen);
+    if (newsockfd < 0) 
+        perror("ERROR on accept");
+    close(sockfd);
+    return newsockfd;
+}
+
+
+
 int accept_connection (int port)
 {
 	int bound;
@@ -2645,20 +2711,29 @@ int accept_connection (int port)
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_port = htons (VNC_BASE + port);
+
+    printf("Opening port, %d\n", port);
 	bound = socket (AF_INET, SOCK_STREAM, IPPROTO_IP);
 	if (bound < 0) {
 		perror ("socket");
 		exit (1);
 	}
+    printf("Binding socket\n");
 	setsockopt (bound, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on));
 	if (bind (bound, (struct sockaddr *) &sin,
 		  sizeof (struct sockaddr_in))) {
 		perror ("bind");
 		exit (1);
 	}
+    printf("Listen\n");
 	listen (bound, 1);
+
+    printf("Accept\n");
 	sock = accept (bound, NULL, 0);
+    printf("close\n");
 	close (bound);
+    printf("done\n");
+
 	return sock;
 }
 
@@ -2676,6 +2751,9 @@ int main (int argc, char *argv[])
 	char *display = NULL;
 	char *vnc_password = NULL;
 	char *end_recording_touch = NULL;
+    int control_port = 0;
+    int control_sock = -1;
+
 	int clientr, clientw;
 	struct sockaddr_in server_addr;
 	int orig_optind;
@@ -2685,23 +2763,24 @@ int main (int argc, char *argv[])
 	/* Options */
 	for (;;) {
 		static struct option long_options[] = {
-			{"playback", 0, 0, 'p'},
-			{"record", 0, 0, 'r'},
-			{"export", 0, 0, 'x'},
-			{"type", 1, 0, 't'},
-			{"date", 0, 0, 'd'},
-			{"loop", 0, 0, 'l'},
-			{"stdout", 0, 0, 'c'},
-			{"shared", 0, 0, 's'},
-			{"server", 1, 0, 'S'},
+			{"playback",  0, 0, 'p'},
+			{"record",    0, 0, 'r'},
+			{"export",    0, 0, 'x'},
+			{"type",      1, 0, 't'},
+			{"date",      0, 0, 'd'},
+			{"loop",      0, 0, 'l'},
+			{"stdout",    0, 0, 'c'},
+			{"shared",    0, 0, 's'},
+			{"server",    1, 0, 'S'},
 			{"framerate", 1, 0, 'F'},
-			{"help", 0, 0, 'h'},
-			{"version", 0, 0, 'V'},
-			{"verbose", 0, 0, 'v'},
-			{"pause", 1, 0, 'P'},
-			{"cycle", 1, 0, 'C'},
-			{"password", 1, 0, 'W'},
+			{"help",      0, 0, 'h'},
+			{"version",   0, 0, 'V'},
+			{"verbose",   0, 0, 'v'},
+			{"pause",     1, 0, 'P'},
+			{"cycle",     1, 0, 'C'},
+			{"password",               1, 0, 'W'},
 			{"touch-at-recording-end", 1, 0, 'X'},
+			{"control-port",           1, 0, 'Y'},
 			{0, 0, 0, 0}
 		};
 		int l;
@@ -2763,7 +2842,13 @@ int main (int argc, char *argv[])
 				usage (argv[0]);
 			end_recording_touch = optarg;
 			break;
-
+		case 'Y':
+			if (control_port)
+				usage (argv[0]);
+            if (sscanf(optarg, "%d", &control_port) == 0) {
+                usage(argv[0]);
+            }
+			break;
 		case 'S':
 			if (server)
 				usage (argv[0]);
@@ -2810,7 +2895,8 @@ int main (int argc, char *argv[])
 
 		files++;
 	}
-	file = malloc ((files + 1) * sizeof (char *));
+    // Maximum file Length = 256
+	file = malloc (256 * sizeof (char *));
 	if (!file) {
 		fprintf (stderr, "out of memory\n");
 		exit (1);
@@ -2876,6 +2962,11 @@ int main (int argc, char *argv[])
 			}
 		}
 		server_addr.sin_port = htons (port);
+        
+        if (control_port) {
+            control_sock = start_control_connection (control_port);
+        }
+
 	}
 
 	/* Export */
@@ -2914,7 +3005,26 @@ int main (int argc, char *argv[])
 
 	/* Do it */
 	if (action == 'r') {
-		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password, end_recording_touch);
+        if (control_sock == -1) {
+            record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password, end_recording_touch, control_sock);
+        } else {
+            do {
+                int n;
+                static char tmp_control_buffer[200];
+                bzero(tmp_control_buffer, 200);
+                ssize_t bufs = read (control_sock, tmp_control_buffer, 200);
+                if (strncmp(tmp_control_buffer,"STATUS", 6) == 0) {
+                    int n = write(control_sock,"WAITING\n", 8);
+                } else if (strncmp(tmp_control_buffer,"RECORD", 6) == 0) {
+                    strcpy(file[0], tmp_control_buffer + 7);
+                    printf("password = %s\n", vnc_password);
+                    record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password, end_recording_touch, control_sock);
+                } else if (strncmp(tmp_control_buffer,"TERMINATE",4) == 0) {
+                    control_exit = 1;
+                }
+            } while (control_exit == 0);
+            
+        }
 	} else {
 		int file_to_play = 0;
 		int looping = 0;
@@ -2932,8 +3042,14 @@ int main (int argc, char *argv[])
 	}
 
 	/* Clean up */
-	if (!use_stdout)
+	if (!use_stdout) 
 		close (clientr);
+
+    if (control_sock != -1) {
+        printf("Closing control socket\n");
+        close (control_sock);
+     }
+
 
 	return 0;
 }
