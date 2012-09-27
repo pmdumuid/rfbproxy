@@ -1327,7 +1327,7 @@ void signal_handler(int signum)
 static int record (const char *file, int clientr, int clientw,
 		   struct sockaddr_in server_addr, int do_events_instead,
 		   int appenddate, int shared_session, char *vnc_password,
-		   char *end_recording_touch)
+		   char *recording_lock_file)
 {
 	const char *version0 = "FBS 001.000\n";
 	const char *version1 = "FBS 001.001\n";
@@ -1365,6 +1365,13 @@ static int record (const char *file, int clientr, int clientw,
 	if (!f) {
 		perror ("fopen");
 		exit (1);
+	}
+
+	if (recording_lock_file) {
+        FILE * fre;
+		fre = fopen (recording_lock_file, "wb");
+		fprintf(fre, "%d", getpid());
+		fclose(fre);
 	}
 
 	if (!do_events_instead) {
@@ -1615,11 +1622,8 @@ static int record (const char *file, int clientr, int clientw,
 	if (fclose (f))
 		perror ("Error writing file");
 
-	if (end_recording_touch) {
-        FILE * fre;
-		fre = fopen (end_recording_touch, "wb");
-		fprintf(fre, "RECORDING ENDED SUCCESSFULLY");
-		fclose(fre);
+	if (recording_lock_file) {
+        unlink(recording_lock_file);
 	}
 	return 0;
 }
@@ -2630,8 +2634,8 @@ static void usage (const char *name)
 		 "               default is \"" DEFAULT_SERVER "\".\n"
 		 " --password=yourPassword\n"
 		 "               (record only) Specify a password to use when connecting to a shared VNC server.\n"
-		 " --touch-at-recording-end=filename\n"
-		 "               (record only) Specify a file to touch once the recording has finished successfully.\n",
+		 " --recording-lock-file=filename\n"
+		 "               (record only) A file to populate with the PID of the process whilst recording (disappears on a successful kill).\n",
 		 name);
 	exit (1);
 }
@@ -2675,7 +2679,7 @@ int main (int argc, char *argv[])
 	char *server = NULL;
 	char *display = NULL;
 	char *vnc_password = NULL;
-	char *end_recording_touch = NULL;
+	char *recording_lock_file = NULL;
 	int clientr, clientw;
 	struct sockaddr_in server_addr;
 	int orig_optind;
@@ -2701,7 +2705,7 @@ int main (int argc, char *argv[])
 			{"pause", 1, 0, 'P'},
 			{"cycle", 1, 0, 'C'},
 			{"password", 1, 0, 'W'},
-			{"touch-at-recording-end", 1, 0, 'X'},
+			{"recording-lock-file", 1, 0, 'X'},
 			{0, 0, 0, 0}
 		};
 		int l;
@@ -2759,9 +2763,9 @@ int main (int argc, char *argv[])
 			vnc_password = optarg;
 			break;
 		case 'X':
-			if (end_recording_touch)
+			if (recording_lock_file)
 				usage (argv[0]);
-			end_recording_touch = optarg;
+			recording_lock_file = optarg;
 			break;
 
 		case 'S':
@@ -2914,7 +2918,7 @@ int main (int argc, char *argv[])
 
 	/* Do it */
 	if (action == 'r') {
-		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password, end_recording_touch);
+		record (file[0], clientr, clientw, server_addr, type == 'e', appenddate, shared_session, vnc_password, recording_lock_file);
 	} else {
 		int file_to_play = 0;
 		int looping = 0;
