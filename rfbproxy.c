@@ -2626,16 +2626,17 @@ static void usage (const char *name)
 		 " --framerate=[ntsc|pal|film|m/n]\n"
 		 "               (export only) Specify framerate by name\n"
 		 "               or rational fraction (frames per second)\n"
-		 " :n            Occupy VNC display localhost:n (not valid with\n"
-		 "               -c option). The default is \""
-		 DEFAULT_DISPLAY "\".\n"
 		 " --server=[server]:display\n"
 		 "               (record only) Use specified VNC server. The\n"
 		 "               default is \"" DEFAULT_SERVER "\".\n"
 		 " --password=yourPassword\n"
 		 "               (record only) Specify a password to use when connecting to a shared VNC server.\n"
 		 " --recording-lock-file=filename\n"
-		 "               (record only) A file to populate with the PID of the process whilst recording (disappears on a successful kill).\n",
+		 "               (record only) A file to populate with the PID of the process whilst recording (disappears on a successful kill).\n"
+         "\n"
+		 " :n            Occupy VNC display localhost:n (not valid with\n"
+		 "               -c option). The default is \""
+		 DEFAULT_DISPLAY "\".\n",
 		 name);
 	exit (1);
 }

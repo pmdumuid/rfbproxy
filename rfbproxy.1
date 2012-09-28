@@ -5,7 +5,7 @@
 rfbproxy \- record, play back, or export a VNC session
 .SH SYNOPSIS
 .B rfbproxy
-[\fIOPTION\fR]... \fIACTION\fR \fIfiles\fR
+\fIACTION\fR [\fIOPTION\fR]... [:n] \fIfiles\fR
 .fi
 .SH DESCRIPTION
 .B rfbproxy
@@ -89,11 +89,6 @@ be played back with
 frames per second) (default
 .BR ntsc )
 .TP
-\fB:n
-Occupy VNC display localhost:\fIn\fR (not valid with \fI\-c\fR
-option; default
-.BR :10 ).
-.TP
 \fB\--server\fR=[\fIserver\fR]:\fIdisplay\fR
 (record only) use specified VNC server (default
 .BR localhost:0 )
@@ -101,8 +96,13 @@ option; default
 \fB\--password\fR=\fIyourPassword\fR
 (record only) Specify a password to use when connecting to a shared VNC server.
 .TP
-\fB\--touch-at-recording-end\fR=\fIfilename\fR
-(record only) Specify a file to touch once the recording has finished successfully.
+\fB\--recording-lock-file\fR=\fIfilename\fR
+(record only) A file to populate with the PID of the process whilst recording (disappears on a successful kill).
+.TP
+\fB:n
+Occupy VNC display localhost:\fIn\fR (not valid with \fI\-c\fR
+option; default
+.BR :10 ).
 .SH EXAMPLES
 .TP
 .I rfbproxy -r log.fbs
